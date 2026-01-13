@@ -1,0 +1,20 @@
+{
+  "name": "peertube-local-channels-list-utility",
+  "version": "1.0.0",
+  "description": "Minimal Node.js + Express UI to list local PeerTube channels for an instance.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "peertube",
+    "express",
+    "channels",
+    "local",
+    "api"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

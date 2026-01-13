@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PeerTube Local Channels</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div>
+        <p class="eyebrow">PeerTube local channels</p>
+        <h1>Explore an instance's local channel list</h1>
+        <p class="subhead">Enter a PeerTube instance URL and fetch every channel hosted on that instance.</p>
+      </div>
+    </header>
+
+    <section class="controls">
+      <label class="field">
+        <span class="label">PeerTube instance URL</span>
+        <input id="instance-input" type="text" placeholder="https://videovortex.tv" />
+      </label>
+      <button id="load-button" type="button">Load channels</button>
+    </section>
+
+    <section class="status" id="status"></section>
+
+    <section class="grid" id="channels-grid" aria-live="polite"></section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
