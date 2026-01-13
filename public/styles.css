@@ -107,11 +107,42 @@ button:disabled {
   cursor: wait;
 }
 
+.view-toggle {
+  margin-top: 18px;
+  display: inline-flex;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.toggle-button {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.toggle-button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .status {
   min-height: 24px;
   margin: 24px 4px 0;
   font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", sans-serif;
   color: var(--muted);
+}
+
+.view-section.is-hidden {
+  display: none;
 }
 
 .grid {
@@ -184,6 +215,90 @@ button:disabled {
 
 .meta span {
   color: var(--ink);
+}
+
+.table-wrapper {
+  margin-top: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+.channels-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  font-family: "Source Sans 3", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.channels-table th,
+.channels-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.channels-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-alt);
+  z-index: 1;
+}
+
+.channels-table tbody tr:hover {
+  background: #fbfaf6;
+}
+
+.channels-table .numeric {
+  text-align: right;
+}
+
+.table-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface-alt);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.table-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sort-button {
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sort-button::after {
+  content: "↕";
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.sort-button.is-active::after {
+  content: "↓";
+  color: var(--accent);
+}
+
+.sort-button.is-active.asc::after {
+  content: "↑";
 }
 
 @keyframes rise-in {

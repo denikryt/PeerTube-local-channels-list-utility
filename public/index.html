@@ -24,9 +24,41 @@
       <button id="load-button" type="button">Load channels</button>
     </section>
 
+    <section class="view-toggle" aria-label="View toggle">
+      <button id="view-cards" class="toggle-button is-active" type="button">Cards</button>
+      <button id="view-table" class="toggle-button" type="button">Table</button>
+    </section>
+
     <section class="status" id="status"></section>
 
-    <section class="grid" id="channels-grid" aria-live="polite"></section>
+    <section class="view-section" id="cards-view" aria-live="polite">
+      <div class="grid" id="channels-grid"></div>
+    </section>
+
+    <section class="view-section is-hidden" id="table-view" aria-live="polite">
+      <div class="table-wrapper">
+        <table class="channels-table">
+          <thead>
+            <tr>
+              <th>Avatar</th>
+              <th>
+                <button class="sort-button" type="button" data-sort-key="name">Channel name</button>
+              </th>
+              <th>
+                <button class="sort-button" type="button" data-sort-key="owner">Owner account</button>
+              </th>
+              <th class="numeric">
+                <button class="sort-button" type="button" data-sort-key="videos">Videos</button>
+              </th>
+              <th class="numeric">
+                <button class="sort-button" type="button" data-sort-key="followers">Followers</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="channels-table-body"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script src="app.js"></script>
