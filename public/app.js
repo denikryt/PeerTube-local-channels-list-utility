@@ -3,8 +3,21 @@ const button = document.getElementById('load-button');
 const statusEl = document.getElementById('status');
 const grid = document.getElementById('channels-grid');
 
+const FIRST_PASS_CONCURRENCY = 4;
+const SECOND_PASS_CONCURRENCY = 2;
+const FIRST_PASS_SPACING_MS = 150;
+const SECOND_PASS_SPACING_MS = 400;
+
 function setStatus(message) {
   statusEl.textContent = message;
+}
+
+function escapeSelector(value) {
+  if (window.CSS && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+
+  return value.replace(/\"/g, '\\\"');
 }
 
 function clearGrid() {
@@ -64,7 +77,11 @@ function createCard(channel, instanceOrigin) {
   owner.innerHTML = `Owner: <span>${channel.ownerAccount?.name || 'Unknown'}</span>`;
 
   const videos = document.createElement('div');
-  videos.innerHTML = `Videos: <span>${Number.isFinite(channel.videosCount) ? channel.videosCount : '—'}</span>`;
+  const videosValue = document.createElement('span');
+  videosValue.dataset.channelName = channel.name;
+  videosValue.textContent = 'Loading...';
+  videos.innerHTML = 'Videos: ';
+  videos.appendChild(videosValue);
 
   const followers = document.createElement('div');
   followers.innerHTML = `Followers: <span>${Number.isFinite(channel.followersCount) ? channel.followersCount : '—'}</span>`;
@@ -79,6 +96,104 @@ function createCard(channel, instanceOrigin) {
   return card;
 }
 
+function setVideosText(channelName, text) {
+  const value = grid.querySelector(
+    `[data-channel-name="${escapeSelector(channelName)}"]`
+  );
+  if (!value) {
+    return;
+  }
+
+  value.textContent = text;
+}
+
+function updateVideosCount(channelName, count) {
+  if (typeof count === 'number') {
+    setVideosText(channelName, String(count));
+  } else {
+    setVideosText(channelName, '—');
+  }
+}
+
+async function fetchVideoCount(instance, channelName, pass) {
+  const response = await fetch(
+    `/api/channel-videos?instance=${encodeURIComponent(instance)}&channel=${encodeURIComponent(channelName)}&pass=${pass}`
+  );
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      retryable: payload.retryable === true,
+      status: payload.status || response.status
+    };
+  }
+
+  if (!Number.isFinite(payload.videosCount)) {
+    return { ok: false, retryable: false, status: response.status };
+  }
+
+  return { ok: true, count: payload.videosCount };
+}
+
+async function fetchVideoCountsWithLimit(instance, channels, options) {
+  const concurrency = options.concurrency;
+  const spacingMs = options.spacingMs;
+  const pass = options.pass;
+  let index = 0;
+  let active = 0;
+  const retryableFailures = [];
+  let startGate = Promise.resolve();
+
+  return new Promise((resolve) => {
+    const next = () => {
+      while (active < concurrency && index < channels.length) {
+        const channel = channels[index++];
+        active += 1;
+
+        fetchVideoCount(instance, channel.name, pass)
+          .then((result) => {
+            if (result.ok) {
+              updateVideosCount(channel.name, result.count);
+            } else if (result.retryable) {
+              retryableFailures.push(channel);
+              if (pass === 1) {
+                setVideosText(channel.name, 'Retrying...');
+              }
+            } else {
+              updateVideosCount(channel.name, null);
+            }
+          })
+          .catch(() => {
+            retryableFailures.push(channel);
+            if (pass === 1) {
+              setVideosText(channel.name, 'Retrying...');
+            }
+          })
+          .finally(() => {
+            active -= 1;
+            startGate = startGate.then(
+              () =>
+                new Promise((gateResolve) => {
+                  setTimeout(gateResolve, spacingMs);
+                })
+            );
+            startGate.then(() => {
+              if (index >= channels.length && active === 0) {
+                resolve(retryableFailures);
+              } else {
+                next();
+              }
+            });
+          });
+      }
+    };
+
+    next();
+  });
+}
+
 async function loadChannels() {
   const instance = input.value.trim();
   if (!instance) {
@@ -87,7 +202,7 @@ async function loadChannels() {
   }
 
   button.disabled = true;
-  setStatus('Loading channels and channel details...');
+  setStatus('Loading channels...');
   clearGrid();
 
   try {
@@ -104,7 +219,7 @@ async function loadChannels() {
       return;
     }
 
-    setStatus(`Loaded ${channels.length} channels from ${payload.instance}.`);
+    setStatus(`Loaded ${channels.length} channels from ${payload.instance}. Fetching video counts...`);
     const fragment = document.createDocumentFragment();
 
     channels.forEach((channel) => {
@@ -112,6 +227,30 @@ async function loadChannels() {
     });
 
     grid.appendChild(fragment);
+    const retryableFailures = await fetchVideoCountsWithLimit(payload.instance, channels, {
+      concurrency: FIRST_PASS_CONCURRENCY,
+      spacingMs: FIRST_PASS_SPACING_MS,
+      pass: 1
+    });
+
+    if (retryableFailures.length > 0) {
+      setStatus(
+        `Retrying ${retryableFailures.length} channels with rate-limited counts...`
+      );
+      const secondFailures = await fetchVideoCountsWithLimit(
+        payload.instance,
+        retryableFailures,
+        {
+          concurrency: SECOND_PASS_CONCURRENCY,
+          spacingMs: SECOND_PASS_SPACING_MS,
+          pass: 2
+        }
+      );
+
+      secondFailures.forEach((channel) => updateVideosCount(channel.name, null));
+    }
+
+    setStatus(`Loaded ${channels.length} channels from ${payload.instance}.`);
   } catch (error) {
     setStatus(error.message || 'Something went wrong.');
   } finally {
